@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://qr-code-j449q3nk5-captaincrouton89s-projects.vercel.app'),
   title: "Free QR Code Generator - Create Custom QR Codes Online",
   description: "Generate QR codes instantly for free. Customize colors, size, and error correction. Download as PNG or SVG. Perfect for URLs, text, business cards, and marketing materials.",
   keywords: ["QR code generator", "free QR code", "custom QR code", "QR code maker", "barcode generator", "URL to QR code", "QR code creator"],
