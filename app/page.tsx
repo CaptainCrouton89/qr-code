@@ -146,9 +146,15 @@ export default function Home() {
       />
       <div className="min-h-screen p-8 pb-20 sm:p-20">
         <main className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-center mb-8">
-          QR Code Generator
-        </h1>
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-4">
+            Free QR Code Generator
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Create custom QR codes instantly with full control over colors, size, and format. 
+            Perfect for marketing campaigns, business cards, and sharing URLs.
+          </p>
+        </header>
 
         <div className="grid md:grid-cols-2 gap-8">
           <div className="space-y-6">

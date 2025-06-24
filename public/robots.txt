@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://qr-code-j449q3nk5-captaincrouton89s-projects.vercel.app/sitemap.xml
