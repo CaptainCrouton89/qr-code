@@ -1,103 +1,330 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import QRCode from "qrcode";
+import { HexColorPicker } from "react-colorful";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [text, setText] = useState("");
+  const [size, setSize] = useState(256);
+  const [fgColor, setFgColor] = useState("#000000");
+  const [bgColor, setBgColor] = useState("#FFFFFF");
+  const [errorLevel, setErrorLevel] = useState<"L" | "M" | "Q" | "H">("M");
+  const [showFgPicker, setShowFgPicker] = useState(false);
+  const [showBgPicker, setShowBgPicker] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    generateQRCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, size, fgColor, bgColor, errorLevel]);
+
+  const generateQRCode = async () => {
+    if (!canvasRef.current) return;
+
+    try {
+      if (text) {
+        await QRCode.toCanvas(canvasRef.current, text, {
+          width: size,
+          color: {
+            dark: fgColor,
+            light: bgColor,
+          },
+          errorCorrectionLevel: errorLevel,
+          margin: 2,
+        });
+      } else {
+        const ctx = canvasRef.current.getContext("2d");
+        if (ctx) {
+          ctx.clearRect(0, 0, size, size);
+          ctx.fillStyle = bgColor;
+          ctx.fillRect(0, 0, size, size);
+        }
+      }
+    } catch (err) {
+      console.error("Error generating QR code:", err);
+    }
+  };
+
+  const downloadQRCode = (format: "png" | "svg") => {
+    if (!text) return;
+
+    if (format === "png") {
+      QRCode.toDataURL(
+        text,
+        {
+          width: size * 2,
+          color: { dark: fgColor, light: bgColor },
+          errorCorrectionLevel: errorLevel,
+          margin: 2,
+        },
+        (err, url) => {
+          if (err) {
+            console.error("Error generating QR code:", err);
+            return;
+          }
+          const link = document.createElement("a");
+          link.download = `qrcode-${Date.now()}.png`;
+          link.href = url;
+          link.click();
+        }
+      );
+    } else {
+      QRCode.toString(
+        text,
+        {
+          type: "svg",
+          width: size,
+          color: { dark: fgColor, light: bgColor },
+          errorCorrectionLevel: errorLevel,
+          margin: 2,
+        },
+        (err, svg) => {
+          if (err) {
+            console.error("Error generating QR code:", err);
+            return;
+          }
+          const blob = new Blob([svg], { type: "image/svg+xml" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.download = `qrcode-${Date.now()}.svg`;
+          link.href = url;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+      );
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (!text || !canvasRef.current) return;
+
+    try {
+      canvasRef.current.toBlob(async (blob) => {
+        if (blob) {
+          await navigator.clipboard.write([
+            new ClipboardItem({ "image/png": blob }),
+          ]);
+          alert("QR code copied to clipboard!");
+        }
+      });
+    } catch (err) {
+      console.error("Error copying to clipboard:", err);
+      alert("Failed to copy to clipboard");
+    }
+  };
+
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "QR Code Generator",
+    "description": "Generate QR codes instantly for free. Customize colors, size, and error correction. Download as PNG or SVG.",
+    "url": "https://qr-code-j449q3nk5-captaincrouton89s-projects.vercel.app",
+    "applicationCategory": "UtilityApplication",
+    "operatingSystem": "Any",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "Real-time QR code generation",
+      "Customizable colors and size",
+      "Multiple export formats (PNG, SVG)",
+      "Error correction level selection",
+      "Copy to clipboard functionality",
+      "Dark mode support",
+      "Mobile responsive design"
+    ]
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      <div className="min-h-screen p-8 pb-20 sm:p-20">
+        <main className="max-w-4xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-8">
+          QR Code Generator
+        </h1>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div>
+              <label htmlFor="text" className="block text-sm font-medium mb-2">
+                Text or URL
+              </label>
+              <textarea
+                id="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Enter text or URL to encode"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={4}
+              />
+              <div className="text-sm text-gray-500 mt-1">
+                {text.length} characters
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="size" className="block text-sm font-medium mb-2">
+                Size: {size}px
+              </label>
+              <input
+                id="size"
+                type="range"
+                min="128"
+                max="512"
+                step="32"
+                value={size}
+                onChange={(e) => setSize(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative">
+                <label className="block text-sm font-medium mb-2">
+                  Foreground Color
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowFgPicker(!showFgPicker)}
+                    className="h-10 w-20 border-2 border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:border-gray-400 transition-colors"
+                    style={{ backgroundColor: fgColor }}
+                    aria-label="Pick foreground color"
+                  />
+                  <input
+                    type="text"
+                    value={fgColor}
+                    onChange={(e) => setFgColor(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm font-mono"
+                    placeholder="#000000"
+                  />
+                </div>
+                {showFgPicker && (
+                  <div className="absolute top-full left-0 z-50 mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
+                    <HexColorPicker color={fgColor} onChange={setFgColor} />
+                    <button
+                      onClick={() => setShowFgPicker(false)}
+                      className="mt-3 w-full px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative">
+                <label className="block text-sm font-medium mb-2">
+                  Background Color
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowBgPicker(!showBgPicker)}
+                    className="h-10 w-20 border-2 border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:border-gray-400 transition-colors"
+                    style={{ backgroundColor: bgColor }}
+                    aria-label="Pick background color"
+                  />
+                  <input
+                    type="text"
+                    value={bgColor}
+                    onChange={(e) => setBgColor(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm font-mono"
+                    placeholder="#FFFFFF"
+                  />
+                </div>
+                {showBgPicker && (
+                  <div className="absolute top-full left-0 z-50 mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
+                    <HexColorPicker color={bgColor} onChange={setBgColor} />
+                    <button
+                      onClick={() => setShowBgPicker(false)}
+                      className="mt-3 w-full px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="errorLevel"
+                className="block text-sm font-medium mb-2"
+              >
+                Error Correction Level
+              </label>
+              <select
+                id="errorLevel"
+                value={errorLevel}
+                onChange={(e) =>
+                  setErrorLevel(e.target.value as "L" | "M" | "Q" | "H")
+                }
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="L">Low (7%)</option>
+                <option value="M">Medium (15%)</option>
+                <option value="Q">Quartile (25%)</option>
+                <option value="H">High (30%)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center space-y-6">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg">
+              <canvas
+                ref={canvasRef}
+                width={size}
+                height={size}
+                className="max-w-full h-auto"
+              />
+            </div>
+
+            {text && (
+              <div className="flex flex-wrap gap-4 justify-center">
+                <button
+                  onClick={() => downloadQRCode("png")}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Download PNG
+                </button>
+                <button
+                  onClick={() => downloadQRCode("svg")}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                >
+                  Download SVG
+                </button>
+                <button
+                  onClick={copyToClipboard}
+                  className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                >
+                  Copy to Clipboard
+                </button>
+              </div>
+            )}
+
+            {!text && (
+              <p className="text-gray-500 text-center">
+                Enter text or URL to generate QR code
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-12 text-center text-sm text-gray-500">
+          <p>
+            Generate QR codes instantly for URLs, text, contact info, and more.
+          </p>
+          <p className="mt-2">
+            Customize colors, size, and error correction level for your needs.
+          </p>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
+    </>
   );
 }
