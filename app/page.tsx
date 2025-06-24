@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import QRCode from "qrcode";
-import { HexColorPicker } from "react-colorful";
+import { ColorPicker } from "@/components/color-picker";
 
 export default function Home() {
   const [text, setText] = useState("");
@@ -10,8 +10,6 @@ export default function Home() {
   const [fgColor, setFgColor] = useState("#000000");
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [errorLevel, setErrorLevel] = useState<"L" | "M" | "Q" | "H">("M");
-  const [showFgPicker, setShowFgPicker] = useState(false);
-  const [showBgPicker, setShowBgPicker] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -191,69 +189,27 @@ export default function Home() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="relative">
+            <div className="space-y-4">
+              <div>
                 <label className="block text-sm font-medium mb-2">
                   Foreground Color
                 </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowFgPicker(!showFgPicker)}
-                    className="h-10 w-20 border-2 border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:border-gray-400 transition-colors"
-                    style={{ backgroundColor: fgColor }}
-                    aria-label="Pick foreground color"
-                  />
-                  <input
-                    type="text"
-                    value={fgColor}
-                    onChange={(e) => setFgColor(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm font-mono"
-                    placeholder="#000000"
-                  />
-                </div>
-                {showFgPicker && (
-                  <div className="absolute top-full left-0 z-50 mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
-                    <HexColorPicker color={fgColor} onChange={setFgColor} />
-                    <button
-                      onClick={() => setShowFgPicker(false)}
-                      className="mt-3 w-full px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                )}
+                <ColorPicker
+                  color={fgColor}
+                  onChange={setFgColor}
+                  className="w-full"
+                />
               </div>
 
-              <div className="relative">
+              <div>
                 <label className="block text-sm font-medium mb-2">
                   Background Color
                 </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowBgPicker(!showBgPicker)}
-                    className="h-10 w-20 border-2 border-gray-300 dark:border-gray-600 rounded cursor-pointer hover:border-gray-400 transition-colors"
-                    style={{ backgroundColor: bgColor }}
-                    aria-label="Pick background color"
-                  />
-                  <input
-                    type="text"
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm font-mono"
-                    placeholder="#FFFFFF"
-                  />
-                </div>
-                {showBgPicker && (
-                  <div className="absolute top-full left-0 z-50 mt-2 p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg">
-                    <HexColorPicker color={bgColor} onChange={setBgColor} />
-                    <button
-                      onClick={() => setShowBgPicker(false)}
-                      className="mt-3 w-full px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                )}
+                <ColorPicker
+                  color={bgColor}
+                  onChange={setBgColor}
+                  className="w-full"
+                />
               </div>
             </div>
 
